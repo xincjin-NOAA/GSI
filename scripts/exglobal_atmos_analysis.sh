@@ -84,6 +84,9 @@ cnvw_option=${cnvw_option:-".false."}
 cao_check=${cao_check:-".true."}
 ta2tb=${ta2tb:-".true."}
 
+#gmi superobbing method 0 no, 4 default superobbing
+gmi_method=${gmi_method:0}
+
 # Diagnostic files options
 lobsdiag_forenkf=${lobsdiag_forenkf:-".false."}
 netcdf_diag=${netcdf_diag:-".true."}
@@ -149,7 +152,7 @@ ESIASI=${ESIASI:-${COMIN_OBS}/${OPREFIX}esiasi.tm00.bufr_d${OSUFFIX}}
 IASIDB=${IASIDB:-${COMIN_OBS}/${OPREFIX}iasidb.tm00.bufr_d${OSUFFIX}}
 AMSREBF=${AMSREBF:-${COMIN_OBS}/${OPREFIX}amsre.tm00.bufr_d${OSUFFIX}}
 AMSR2BF=${AMSR2BF:-${COMIN_OBS}/${OPREFIX}amsr2.tm00.bufr_d${OSUFFIX}}
-#GMI1CRBF=${GMI1CRBF:-${COMIN_OBS}/${OPREFIX}gmi1cr.tm00.bufr_d${OSUFFIX}} # GMI temporarily disabled due to array overflow.
+GMI1CRBF=${GMI1CRBF:-${COMIN_OBS}/${OPREFIX}gmi1cr.tm00.bufr_d${OSUFFIX}} # GMI temporarily disabled due to array overflow.
 SAPHIRBF=${SAPHIRBF:-${COMIN_OBS}/${OPREFIX}saphir.tm00.bufr_d${OSUFFIX}}
 SEVIRIBF=${SEVIRIBF:-${COMIN_OBS}/${OPREFIX}sevcsr.tm00.bufr_d${OSUFFIX}}
 AHIBF=${AHIBF:-${COMIN_OBS}/${OPREFIX}ahicsr.tm00.bufr_d${OSUFFIX}}
@@ -519,7 +522,7 @@ $NLN $ESIASI           iasibufrears
 $NLN $IASIDB           iasibufr_db
 $NLN $AMSREBF          amsrebufr
 $NLN $AMSR2BF          amsr2bufr
-#$NLN $GMI1CRBF         gmibufr   # GMI temporarily disabled due to array overflow.
+$NLN $GMI1CRBF         gmibufr   # GMI temporarily disabled due to array overflow.
 $NLN $SAPHIRBF         saphirbufr
 $NLN $SEVIRIBF         seviribufr
 $NLN $CRISBF           crisbufr
@@ -766,6 +769,7 @@ cat > gsiparm.anl << EOF
   newpc4pred=.true.,adp_anglebc=.true.,angord=4,passive_bc=.true.,use_edges=.false.,
   diag_precon=.true.,step_start=1.e-3,emiss_bc=.true.,nhr_obsbin=${nhr_obsbin:-3},
   cwoption=3,imp_physics=$imp_physics,lupp=$lupp,cnvw_option=$cnvw_option,cao_check=${cao_check},
+  gmi_method=${gmi_method},
   netcdf_diag=$netcdf_diag,binary_diag=$binary_diag,
   lobsdiag_forenkf=$lobsdiag_forenkf,
   write_fv3_incr=$write_fv3_increment,
