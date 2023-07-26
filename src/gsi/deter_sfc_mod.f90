@@ -33,7 +33,7 @@ module deter_sfc_mod
   use satthin, only: sno_full,isli_full,sst_full,soil_moi_full, &
       soil_temp_full,soil_type_full,veg_frac_full,veg_type_full, &
       fact10_full,zs_full,sfc_rough_full,zs_full_gfs
-  use constants, only: zero,one,two,one_tenth,deg2rad,rad2deg
+  use constants, only: zero,one,two,one_tenth,deg2rad,rad2deg, rearth
   use gridmod, only: nlat,nlon,regional,tll2xy,nlat_sfc,nlon_sfc,rlats_sfc,rlons_sfc, &
       rlats,rlons,dx_gfs,txy2ll,lpl_gfs
   use guess_grids, only: nfldsfc,hrdifsfc,ntguessfc
