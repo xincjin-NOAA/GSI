@@ -1782,6 +1782,7 @@ contains
 
 !     Create diagnostic filename
       fdiag_rad = 'diag_' // trim(dtype(iii)) // '_' // trim(dplat(iii))
+      write(6,*) 'INIT_PREDX:  Task',mype,  '  file ', trim(fdiag_rad)
 
 !     Set diagnostic file type
       call set_netcdf_read(netcdf_diag)
