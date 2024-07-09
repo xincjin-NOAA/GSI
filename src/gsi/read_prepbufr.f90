@@ -359,7 +359,7 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
 
   real(r_double) rstation_id,qcmark_huge
   real(r_double) vtcd,glcd !virtual temp program code and GLERL program code
-  real(r_double),dimension(8):: hdr,hdrtsb
+  real(r_double),dimension(8):: hdr,hdrtsb,cygsub
   real(r_double),dimension(3,255):: hdr3
   real(r_double),dimension(8,255):: drfdat,qcmark,obserr,var_jb
   real(r_double),dimension(13,255):: obsdat
@@ -786,6 +786,13 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
             iobsub=01
           endif
         endif
+
+!MJM iobsub for CYG set to SAID
+        if(trim(infile).eq."cygbufr") then !MJM
+           call ufbint(lunin,cygsub,8,1,iret,hdstr)
+           iobsub=cygsub(7)
+        end if
+
 ! Su suggested to keep both 289 and 290.  But trunk only keep 290
 !       if(kx == 289 .or. kx == 290) iobsub=hdr(2)
 
@@ -819,9 +826,11 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
 
 !  Find convtype which match ob type and subtype
            if(icsubtype(nc) == iobsub) then
+              if(trim(infile).eq."cygbufr") write(6,*)"MJM CYG iobsub = ",iobsub
               ncsave=nc
               exit matchloop
            else
+              if(trim(infile)=="cygbufr")cycle !MJM: cyg subtype needs to remain, not reset to 0
 !  Find convtype which match ob type and subtype group (isubtype == ?*)
 !       where ? specifies the group and icsubtype = ?0)
               ixsub=icsubtype(nc)/10
@@ -1017,6 +1026,10 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
 !          Extract type, date, and location information
            call ufbint(lunin,hdr,8,1,iret,hdstr)
            kx=hdr(5)
+           if(kx==283)then !MJM
+             iobsub=hdr(7)
+             !write(6,*)"283, what subtype? ",iobsub
+           end if
 
            if (.not.(aircraft_t_bc .and. acft_profl_file)) then
               if(abs(hdr(3))>r90 .or. abs(hdr(2))>r360) cycle loop_readsb
@@ -2035,7 +2048,7 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
                       (howvob  .and. owave(1,k) > r0_1_bmiss) .or. &
                       (cldchob  .and. cldceilh(1,k) > r0_1_bmiss))then  
                  usage=103._r_kind
-              else if(convobs .and. pqm(k) >=lim_qm )then
+              else if(convobs .and. pqm(k) >=lim_qm .and. trim(infile).ne."cygbufr" )then
                  usage=102._r_kind
               else if(qm >=min(lim_qm,8) )then
                  usage=101._r_kind
@@ -2044,7 +2057,9 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
                  usage=100._r_kind
               end if
 
-              if (sfctype) then 
+              if(trim(infile).eq."cygbufr")write(6,*)"MJM cygbufr usage: ",usage
+
+              if (sfctype) then
                  if (i_gsdsfc_uselist==1 ) then
                     if (kx==188 .or. kx==195 .or. kx==288.or.kx==295)  &
                     call apply_gsd_sfcuselist(kx,obstype,c_station_id,c_prvstg,c_sprvstg, &

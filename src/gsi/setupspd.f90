@@ -565,6 +565,14 @@ subroutine setupspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_diags
      if (ratio_errors*error <=tiny_r_kind) muse(i)=.false.
      if (nobskeep>0.and.luse_obsdiag) call obsdiagNode_get(my_diag, jiter=nobskeep, muse=muse(i))
 
+     !Diagnostic print: Nov 20 2019
+     write(6,'("MJM grepCYG,",a,i2,2(a,l2),a,i7,a,i5,2(a,f10.5),a,f7.4,3(a,f8.4),a,f10.3,a,f4.1,a,f10.4,a,f6.2,a,i3)')&
+           ', jiter=,',jiter, ', luse(i)=,', luse(i),', muse(i)=,', muse(i),&
+           ', mype=,', mype, ', i=,', i, ', lat=,', data(ilate,i), ', lon=,', &
+           data(ilone,i), ', dtime=,', dtime,', o-g=,', ddiff,', ob=,',spdob,',ges=,', spdges,&
+           ', GSI obs error=,',obserror,', qc mark=,',data(iqc,i),&
+           ', woe=,',data(ier2,i),', read_prepbufr usage=,',data(iuse,i),',subtype=,',icsubtype(ikx)
+
 !    Compute penalty terms (linear & nonlinear qc).
      val      = error*ddiff
      val2     = val*val
