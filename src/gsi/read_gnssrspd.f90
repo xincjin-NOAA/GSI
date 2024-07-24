@@ -148,11 +148,12 @@ subroutine read_gnssrspd(nread,ndata,nodata,infile,obstype,lunout,twind,sis,&
 !    Data 
      !data timestr  / 'YEAR MNTH DAYS HOUR MINU SECO' /
      data timestr / 'DHR RPT' /
-     !data locstr   / 'CLAT CLON' /
+     !data locstr   / 'CLON CLAT' /
      data locstr   / 'XOB YOB' /
      !data wndstr   / 'WSPD' / !GNSSRSPD Wind speed
      data wndstr   / 'SOB' / !GNSSRSPD Wind speed
-     data oestr   / 'WSU' / !GNSSRSPD Wind speed uncertainty/error 
+!     data oestr   / 'WSU' / !GNSSRSPD Wind speed uncertainty/error 
+     data oestr   / 'WOE' / !GNSSRSPD Wind speed uncertainty/error 
      data lunin    / 13 /
  
 !------------------------------------------------------------------------------------------------
@@ -314,8 +315,8 @@ end if
 !          Read observation location (lat/lon degree) 
            call ufbint(lunin,obsloc,2,1,nlv,locstr)
 
-           if (obsloc(1,1) == missing .or. abs(obsloc(1,1)) < -180.0_r_kind .or. &     
-               obsloc(1,1) == missing .or. abs(obsloc(1,1)) >  180.0_r_kind .or. &
+           if (obsloc(1,1) == missing .or. abs(obsloc(1,1)) < .0_r_kind .or. &     
+               obsloc(1,1) == missing .or. abs(obsloc(1,1)) >  360.0_r_kind .or. &
                obsloc(2,1) == missing .or. abs(obsloc(2,1)) <  -90.0_r_kind .or. &
                obsloc(2,1) == missing .or. abs(obsloc(2,1)) >   90.0_r_kind ) then 
                write(6,*) 'READ_GNSSRSPD: bad lon/lat values: ', obsloc(1,1),obsloc(2,1)              
@@ -391,6 +392,8 @@ end if
 
            ! Winds --- surface wind speed 
            if (lspdob) then
+
+              write(6,*) 'READ_GNSSRSPD: spd, dlat values: ', dlat, spdob
               woe = obserr
               !if (inflate_error) woe = woe*r3_0
               !if (inflate_error) woe = woe*r1_2

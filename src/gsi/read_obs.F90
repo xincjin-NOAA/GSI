@@ -490,7 +490,8 @@ subroutine read_obs_check (lexist,filename,jsatid,dtype,minuse,nread)
             endif
             nread = nread + 1
          end do loop_hdob
-       else if(trim(filename) == 'gnssrwndbufr')then
+       else if(trim(filename) == 'gnssrwndbufr' .or. &
+               trim(filename) == 'cygbufr') then
          lexist = .false.
          gnssrwndloop: do while(ireadmg(lnbufr,subset,idate2) >= 0)
            if (trim(dtype)=='gnssrspd') then
@@ -1464,7 +1465,8 @@ subroutine read_obs(ndata,mype)
                    string='READ_PREPBUFR'
                 endif
 
-             else if (obstype == 'gnssrspd' .and. index(infile,'gnssrwndbufr') /=0 ) then
+             else if (obstype == 'gnssrspd' .and. index(infile,'gnssrwndbufr') /=0 .or. &
+                     index(infile,'cygbufr') /=0 ) then
                 call read_gnssrspd(nread,npuse,nouse,infile,obstype,lunout,twind,sis, &
                       nobs_sub1(1,i))
                 string='READ_GNSSRSPD'
