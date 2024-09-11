@@ -246,7 +246,9 @@ contains
       npred,jpch_rad,varch,varch_cld,iuse_rad,icld_det,nusis,fbias,retrieval,b_rad,pg_rad,&
       air_rad,ang_rad,adp_anglebc,angord,ssmis_precond,emiss_bc,upd_pred, &
       passive_bc,ostats,rstats,newpc4pred,radjacnames,radjacindxs,nsigradjac,nvarjac, &
-      varch_sea,varch_land,varch_ice,varch_snow,varch_mixed
+      varch_sea,varch_land,varch_ice,varch_snow,varch_mixed, &
+      npred_ml, ml_weight0, ml_weight1, ml_weight2, ml_weight3, ml_bias0, ml_bias1, ml_bias2, ml_bias3, &
+      ml_scale, ml_mean, ml_var, ml_debug  !ML
   use gsi_nstcouplermod, only: nstinfo
   use read_diag, only: get_radiag,ireal_radiag,ipchan_radiag
   use guess_grids, only: sfcmod_gfs,sfcmod_mm5,comp_fact10
@@ -409,6 +411,15 @@ contains
   real(r_kind) :: clw_guess,clw_guess_retrieval,ciw_guess,rain_guess,snow_guess,clw_avg
   real(r_kind),dimension(:), allocatable :: rsqrtinv
   real(r_kind),dimension(:), allocatable :: rinvdiag
+
+! For ML
+
+  real(r_kind) , dimension(nchanl) ::  predbias_ml, ml_tlap
+  real(r_kind),dimension(npred_ml):: pred_ml
+  real(r_kind),dimension(12,15):: pred_ml_ch
+  real, dimension(50) :: ml_h1, ml_h2, ml_h3
+  real, dimension(15) :: ml_y
+  real, dimension(npred_ml) :: scale_obs
 
 !for GMI (dual scan angles)
   real(r_kind),dimension(nchanl):: emissivity2,ts2, emissivity_k2,tsim2
@@ -1096,6 +1107,55 @@ contains
                  endif
               endif
            endif
+        endif
+
+! ML bias
+        if (amsua) then
+            if (nchanl /= 15) then
+                write(6, *) 'RADINFO nchanl=', nchanl
+            endif
+            pred_ml(1) = data_s(ilazi_ang,n)*deg2rad * cos(cenlat*deg2rad)
+            pred_ml(2) = sin(cenlat*deg2rad)
+            pred_ml(3) = data_s(iscan_ang,n)
+            pred_ml(4) = data_s(iscan_ang,n) ** 2
+            pred_ml(5) = data_s(iscan_ang,n) ** 3
+            pred_ml(6) = data_s(iscan_ang,n) ** 4
+            pred_ml(7) = clw_obs*cosza*cosza
+            pred_ml(8) = (one/cosza-one)**2
+            pred_ml_ch(9, :) = tb_obs
+            pred_ml(9:9+14) = pred_ml_ch(9, :)
+            tlapchn= (ptau5(2,:)-ptau5(1,:))*(tsavg5-tvp(2))
+               do k=2,nsig-1
+                  tlapchn = tlapchn + (ptau5(k+1,:) - ptau5(k,:)) * (tvp(k-1) - tvp(k+1))
+               end do
+            ml_tlap = tlapchn-tlapmean(ich)  !TODO decide mm
+            pred_ml_ch(10, :) = ml_tlap
+            pred_ml(24:24+14) = pred_ml_ch(10, :)  ! tlap **2 ?
+            pred_ml_ch(11, :) = emissivity
+            pred_ml(39:39+14) =   pred_ml_ch(11, :)
+
+            scale_obs = ml_scale * (pred_ml - ml_mean)/ml_var
+
+            ml_h1 = max(0.0, matmul(ml_weight0, scale_obs) + ml_bias0)
+            ml_h2 = max(0.0, matmul(ml_weight1, ml_h1) + ml_bias1)
+            ml_h3 = matmul(ml_weight2, ml_h2) + ml_bias2
+            ml_y = matmul(ml_weight3,  ml_h3) + ml_bias3
+            predbias_ml = ml_y
+            if (ml_debug .and.  mype == 0) then
+                write(6, *) 'ML data for validation'
+                do i = 1, npred_ml
+                    write(6, '(F12.6, A)', advance="no") pred_ml(i), ", "
+                end do
+                write(6, *) 'ML data for validation scaled_obs'
+                do i = 1, npred_ml
+                    write(6, '(F12.6, A)', advance="no") scale_obs(i), ", "
+                end do
+                write(6, *) 'predictors: ', pred_ml
+                write(6, *) 'h1=', ml_h1
+                write(6, *) 'h2=', ml_h2
+                write(6, *) 'h3=', ml_h3
+                write(6, *) 'y=', ml_y
+            endif
         endif
 
         predbias=zero
@@ -2722,6 +2782,20 @@ contains
                     call nc_diag_metadata_to_single("BCPred_Cosine_Latitude_times_Node",pred(6,ich_diag(i))        )             ! node*cos(lat) bias correction term
                     call nc_diag_metadata_to_single("BCPred_Sine_Latitude",pred(7,ich_diag(i))        )             ! sin(lat) bias correction term
                     call nc_diag_metadata_to_single("BCPred_Emissivity",pred(8,ich_diag(i))        )             ! emissivity sensitivity bias correction term
+                    if (amsua) then
+                       call nc_diag_metadata_to_single("ml_pred_1",pred_ml(1)  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_2",pred_ml(2)  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_3",pred_ml(3)  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_4",pred_ml(4)  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_5",pred_ml(5)  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_6",pred_ml(6)  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_7",pred_ml(7)  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_8",pred_ml(8)  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_9",pred_ml_ch(9, ich_diag(i))  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_10",pred_ml_ch(10, ich_diag(i))  )             ! constant bias correction term
+                       call nc_diag_metadata_to_single("ml_pred_11",pred_ml_ch(11, ich_diag(i))  )             ! constant bias correction term
+                    endif
+
                  endif
 
                  if (lwrite_peakwt) then

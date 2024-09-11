@@ -1,4 +1,4 @@
-module radinfo 
+module radinfo
 !$$$   module documentation block
 !                .      .    .                                       .
 ! module:    radinfo   
@@ -185,7 +185,22 @@ module radinfo
 !  pred(10,:) = third order polynomial of angle bias correction
 !  pred(11,:) = second order polynomial of angle bias correction
 !  pred(12,:) = first order polynomial of angle bias correction
- 
+
+
+
+! ML bias correction
+  public :: npred_ml, ml_weight0, ml_weight1, ml_weight2, ml_weight3, ml_bias0, ml_bias1, ml_bias2, ml_bias3
+  public :: ml_scale, ml_mean, ml_var, ml_debug
+  real(r_kind), dimension(50, 53) :: ml_weight0
+  real(r_kind), dimension(50, 50) :: ml_weight1, ml_weight2
+  real(r_kind), dimension(15, 50) :: ml_weight3
+  real(r_kind), dimension(50) :: ml_bias0, ml_bias1, ml_bias2
+  real(r_kind), dimension(15) :: ml_bias3
+  real(r_kind), dimension(53) :: ml_scale, ml_mean, ml_var
+  integer(i_kind) :: npred_ml =  53        ! number of radiance biases predictors for ml
+  logical ml_debug
+
+
   real(r_kind),allocatable,dimension(:,:):: varA
   real(r_kind),allocatable,dimension(:):: ostats
   real(r_quad),allocatable,dimension(:,:):: rstats
@@ -287,7 +302,7 @@ contains
     use constants, only: one_tenth, one, r0_01, zero
 
     implicit none
-
+    ml_debug = .true.       !  write additional informaiton for ML debug
     biaspredvar = one_tenth ! berror var for radiance bias coeffs
     jpch_rad = 0            ! total number of channels over all instruments & satellites
     retrieval = .false.     ! .true. = apply physical SST retrieval with AVHRR data
@@ -652,6 +667,8 @@ contains
     logical cold_start_seviri         ! flag to fix wrong channel numbers for seviri.  True = fix, false = already correct
 
     integer(i_kind) binary_iextra_det(10)
+
+    character(len=100) :: line        ! for ML reading
 
     data lunin / 49 /
 
@@ -1041,6 +1058,72 @@ contains
           radedge2(j)=edge2
        end do
     end if  ! if pcexist
+
+
+!   Read in the ML trained bias coefficient
+    ! write(6, *) 'start to read data for ml'
+    ! Open the file for reading
+    open(unit=lunin, file='multiple_arrays.txt', status='old', action='read')
+
+    ! Read the first array
+    do i = 1, 50
+    read(lunin, *, iostat=istat) (ml_weight0(i, j), j = 1, npred_ml)
+    if (istat /= 0) exit
+    end do
+
+    ! Read the third array
+    read(lunin, *, iostat=istat) (ml_bias0(j), j = 1, 50)
+
+    ! Read the second array
+    do i = 1, 50
+    read(lunin, *, iostat=istat) (ml_weight1(i, j), j = 1, 50)
+    if (istat /= 0) exit
+    end do
+
+    ! Read the third array
+    read(lunin, *, iostat=istat) (ml_bias1(j), j = 1, 50)
+
+    do i = 1, 50
+    read(lunin, *, iostat=istat) (ml_weight2(i, j), j = 1, 50)
+    if (istat /= 0) exit
+    end do
+
+    ! Read the third array
+    read(lunin, *, iostat=istat) (ml_bias2(j), j = 1, 50)
+
+    do i = 1, 15
+    read(lunin, *, iostat=istat) (ml_weight3(i, j), j = 1, 50)
+    if (istat /= 0) exit
+    end do
+
+    ! Read the third array
+    read(lunin, *, iostat=istat) (ml_bias3(j), j = 1, 15)
+
+    ! Read the third array
+    read(lunin, *, iostat=istat) (ml_scale(j), j = 1, npred_ml)
+
+    ! Read the third array
+    read(lunin, *, iostat=istat) (ml_mean(j), j = 1, npred_ml)
+
+    ! Read the third array
+    read(lunin, *, iostat=istat) (ml_var(j), j = 1, npred_ml)
+
+    ! Close the file
+    close(lunin)
+    if (ml_debug .and. mype ==0) then
+        write(6,*) 'RADINFO_READ: ML check: ml_weight0=', ml_weight0
+        write(6,*) 'RADINFO_READ: ML check: ml_weight1=', ml_weight1
+        write(6,*) 'RADINFO_READ: ML check: ml_weight2=', ml_weight2
+        write(6,*) 'RADINFO_READ: ML check: ml_weight3=', ml_weight3
+        write(6,*) 'RADINFO_READ: ML check: ml_bias0=', ml_bias0
+        write(6,*) 'RADINFO_READ: ML check: ml_bias1=', ml_bias1
+        write(6,*) 'RADINFO_READ: ML check: ml_bias2=', ml_bias2
+        write(6,*) 'RADINFO_READ: ML check: ml_bias3=', ml_bias3
+        write(6,*) 'RADINFO_READ: ML check: ml_scale=', ml_scale
+        write(6,*) 'RADINFO_READ: ML check: ml_mean=', ml_mean
+        write(6,*) 'RADINFO_READ: ML check: ml_var=', ml_var
+    endif
+
 
 
     if ( .not. retrieval ) then
