@@ -177,7 +177,7 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
   use kinds, only: r_single,r_kind,r_double,i_kind
   use constants, only: zero,one_tenth,one,deg2rad,fv,t0c,half,&
       three,four,rad2deg,tiny_r_kind,huge_r_kind,huge_i_kind,&
-      r60inv,r10,r100,r2000
+      r60inv,r10,r100,r2000, two
   use constants,only: rearth,stndrd_atmos_ps,rd,grav
   use gridmod, only: diagnostic_reg,regional,nlon,nlat,nsig,&
       tll2xy,txy2ll,rotate_wind_ll2xy,rotate_wind_xy2ll,&
@@ -2365,10 +2365,12 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
                     cdata_all(28,iout)=ran01dom()*perturb_fact ! v perturbation
                  endif
  
-              else if(spdob) then 
+              else if(spdob) then
+                 obserr(5,k) = max(obserr(5,k),1.5_r_kind)
                  woe=obserr(5,k)
-                 if (inflate_error) woe=woe*r1_2
-                 elev=r20
+                 ! if (inflate_error) woe=woe*r1_2
+                 !elev=r20
+                 elev=r10
                  if (((kx==295).or.(kx==288)).and.twodvar_regional) then  !account for mesonet wind ht
                     oelev=windsensht+selev
                  else
@@ -2380,8 +2382,8 @@ subroutine read_prepbufr(nread,ndata,nodata,infile,obstype,lunout,twindin,sis,&
                  cdata_all(2,iout)=dlon                    ! grid relative longitude
                  cdata_all(3,iout)=dlat                    ! grid relative latitude
                  cdata_all(4,iout)=dlnpob                  ! ln(pressure in cb)
-                 cdata_all(5,iout)=obsdat(5,k)             ! u obs
-                 cdata_all(6,iout)=obsdat(6,k)             ! v obs
+                 cdata_all(5,iout)=obsdat(5,k) * sqrt(two) * half             ! u obs
+                 cdata_all(6,iout)=obsdat(5,k) * sqrt(two) * half              ! v obs
                  cdata_all(7,iout)=rstation_id             ! station id
                  cdata_all(8,iout)=t4dv                    ! time
                  cdata_all(9,iout)=nc                      ! type

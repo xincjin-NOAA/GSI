@@ -85,6 +85,7 @@ subroutine setupgnssrspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_
   ! apply only to the regional forecast models (e.g., HWRF); Henry
   ! R. Winterbottom (henry.winterbottom@noaa.gov).
 
+  use obsmod, only: uv_doe_a_213,uv_doe_b_213
   
   implicit none
 
@@ -117,7 +118,7 @@ subroutine setupgnssrspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_
   real(r_kind) val2,ressw,ress,error,ddiff,dx10,rhgh,prsfc,r0_001
   real(r_kind) sfcchk,prsln2,rwgt,tfact                        
   real(r_kind) thirty,rsig,ratio,residual,obserrlm,obserror
-  real(r_kind) val,valqc,psges,drpx,dlat,dlon,dtime,rlow
+  real(r_kind) val,valqc,psges,drpx,dlat,dlon,dtime,dpresave,rlow
   real(r_kind) cg_gnssrspd,wgross,wnotgross,wgt,arg,exp_arg,term,rat_err2
   real(r_kind) errinv_input,errinv_adjst,errinv_final
   real(r_kind) err_input,err_adjst,err_final
@@ -236,7 +237,7 @@ subroutine setupgnssrspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_
   !!awork(:) = zero
 
   do i=1,nobs
-     muse(i)=nint(data(iuse,i)) <= jiter
+     muse(i)=nint(data(iuse,i)) <= jiter .and. nint(data(iqc,i)) < 8
   end do
 
   dup=one
@@ -380,6 +381,18 @@ subroutine setupgnssrspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_
         pobl     = p1 + (dlnp21/dz21)*dz
         presw    = ten*exp(pobl)
 
+!    Process observations with reported pressure
+     else
+
+        presw = ten*exp(dpres)
+        dpres = dpres-log(psges)
+        drpx=zero
+        if(nty >= 280 .and. nty < 290)then
+           dpresave=dpres
+           dpres=-goverrd*data(ihgt,i)/tges(1)
+           if(nty < 283)drpx=abs(dpres-dpresave)*factw*thirty
+        end if
+
         prsfc=psges
         prsln2=log(exp(prsltmp(1))/prsfc)
         sfcchk=log(psges)
@@ -430,7 +443,7 @@ subroutine setupgnssrspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_
      gnssrspdges=sqrt(ugesin*ugesin+vgesin*vgesin)
 
      iz = max(1, min( int(dpres), nsig))
-     delz = max(zero, min(dpres - float(iz), one))
+     delz = max(zero, min(dpres - real(iz,r_kind), one))
 
      if (save_jacobian) then
 
