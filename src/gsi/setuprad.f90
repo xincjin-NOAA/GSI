@@ -248,7 +248,7 @@ contains
       passive_bc,ostats,rstats,newpc4pred,radjacnames,radjacindxs,nsigradjac,nvarjac, &
       varch_sea,varch_land,varch_ice,varch_snow,varch_mixed, &
       npred_ml, ml_weight0, ml_weight1, ml_weight2, ml_weight3, ml_bias0, ml_bias1, ml_bias2, ml_bias3, &
-      ml_scale, ml_mean, ml_var, ml_debug  !ML
+      ml_scale, ml_mean, ml_var, ml_debug, enable_ml_bc !ML
   use gsi_nstcouplermod, only: nstinfo
   use read_diag, only: get_radiag,ireal_radiag,ipchan_radiag
   use guess_grids, only: sfcmod_gfs,sfcmod_mm5,comp_fact10
@@ -1110,7 +1110,7 @@ contains
         endif
 
 ! ML bias
-        if (amsua) then
+        if (amsua .and. enable_ml_bc) then
             if (nchanl /= 15) then
                 write(6, *) 'RADINFO nchanl=', nchanl
             endif
@@ -1254,12 +1254,17 @@ contains
 !          tbcnob = obs - guess before bias correction
            tbcnob(i)    = tb_obs(i) - tsim(i)  
            tbc(i)       = tbcnob(i)                     
- 
-           do j=1, npred-angord
-              tbc(i)=tbc(i) - predbias(j,i) !obs-ges with bias correction
-           end do
-           tbc(i)=tbc(i) - predbias(npred+1,i)
-           tbc(i)=tbc(i) - predbias(npred+2,i)
+
+           if (amsua .and. enable_ml_bc) then ! ML
+               tbc(i)=tbc(i) - predbias_ml(i) !obs-ges with bias correction
+           else
+
+               do j=1, npred-angord
+                  tbc(i)=tbc(i) - predbias(j,i) !obs-ges with bias correction
+               end do
+               tbc(i)=tbc(i) - predbias(npred+1,i)
+               tbc(i)=tbc(i) - predbias(npred+2,i)
+           endif
 
 !          Calculate cloud effect for QC
            if (radmod%cld_effect .and. eff_area) then
@@ -1267,11 +1272,15 @@ contains
               cldeff_fg(i) = tsim(i)-tsim_clr(i)      ! simulated cloud delta
               ! need to apply bias correction ? need to think about this
               bias = zero
-              do j=1, npred-angord
-                 bias = bias+predbias(j,i)
-              end do
-              bias = bias+predbias(npred+1,i)
-              bias = bias+predbias(npred+2,i)
+              if (amsua .and. enable_ml_bc) then
+                  bias = predbias_ml(i)
+              else
+                  do j=1, npred-angord
+                     bias = bias+predbias(j,i)
+                  end do
+                  bias = bias+predbias(npred+1,i)
+                  bias = bias+predbias(npred+2,i)
+              endif   ! bias
               cldeff_obs(i)=cldeff_obs(i) - bias       ! observed cloud delta (bias corrected)                
            endif
         end do
@@ -2773,6 +2782,9 @@ contains
                  call nc_diag_metadata_to_single("BC_Sine_Latitude",predbias(7,ich_diag(i))        )             ! sin(lat) bias correction term
                  call nc_diag_metadata_to_single("BC_Emissivity",predbias(8,ich_diag(i))        )             ! emissivity sensitivity bias correction term
                  call nc_diag_metadata_to_single("BC_Fixed_Scan_Position",predbias(npred+1,ich_diag(i))  )             ! external scan angle
+                 if (amsua .and. enable_ml_bc) then
+                     call nc_diag_metadata_to_single("BC_ml",predbias_ml(ich_diag(i))  )             ! ml
+                 endif
                  if (lwrite_predterms) then
                     call nc_diag_metadata_to_single("BCPred_Constant",pred(1,ich_diag(i))        )             ! constant bias correction term
                     call nc_diag_metadata_to_single("BCPred_Scan_Angle",pred(2,ich_diag(i))        )             ! scan angle bias correction term
@@ -2782,7 +2794,7 @@ contains
                     call nc_diag_metadata_to_single("BCPred_Cosine_Latitude_times_Node",pred(6,ich_diag(i))        )             ! node*cos(lat) bias correction term
                     call nc_diag_metadata_to_single("BCPred_Sine_Latitude",pred(7,ich_diag(i))        )             ! sin(lat) bias correction term
                     call nc_diag_metadata_to_single("BCPred_Emissivity",pred(8,ich_diag(i))        )             ! emissivity sensitivity bias correction term
-                    if (amsua) then
+                    if (amsua .and. enable_ml_bc) then
                        call nc_diag_metadata_to_single("ml_pred_1",pred_ml(1)  )             ! constant bias correction term
                        call nc_diag_metadata_to_single("ml_pred_2",pred_ml(2)  )             ! constant bias correction term
                        call nc_diag_metadata_to_single("ml_pred_3",pred_ml(3)  )             ! constant bias correction term

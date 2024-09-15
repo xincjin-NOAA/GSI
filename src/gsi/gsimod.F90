@@ -72,7 +72,8 @@
   use radinfo, only: retrieval,diag_rad,init_rad,init_rad_vars,adp_anglebc,angord,upd_pred,&
                        biaspredvar,use_edges,passive_bc,newpc4pred,final_rad_vars,emiss_bc,&
                        ssmis_method,ssmis_precond,gmi_method,amsr2_method,bias_zero_start, &
-                       reset_bad_radbc,cld_det_dec2bin,diag_version,lupdqc,lqcoef
+                       reset_bad_radbc,cld_det_dec2bin,diag_version,lupdqc,lqcoef, &
+                       enable_ml_bc, ml_debug
   use radinfo, only: tzr_qc,tzr_bufrsave
   use radinfo, only: crtm_coeffs_path,optconv
   use ozinfo, only: diag_ozone,init_oz
@@ -804,7 +805,8 @@
        cao_check,lcalc_gfdl_cfrac,tau_fcst,efsoi_order,lupdqc,lqcoef,cnvw_option,l2rwthin,hurricane_radar,&
        l_reg_update_hydro_delz, l_obsprvdiag,&
        l_use_dbz_directDA, l_use_rw_columntilt, ta2tb, optconv, &
-       r_hgt_fed
+       r_hgt_fed, &
+       enable_ml_bc, ml_debug
 
 ! GRIDOPTS (grid setup variables,including regional specific variables):
 !     jcap     - spectral resolution
