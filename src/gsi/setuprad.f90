@@ -1319,14 +1319,19 @@ contains
               tsim_bc(i)=tsim(i)
               tsim_clr_bc(i)=tsim_clr(i)
 
-              do j=1,npred-angord
-                 tsim_bc(i)=tsim_bc(i)+predbias(j,i)
-                 tsim_clr_bc(i)=tsim_clr_bc(i)+predbias(j,i)
-              end do
-              tsim_bc(i)=tsim_bc(i)+predbias(npred+1,i)
-              tsim_bc(i)=tsim_bc(i)+predbias(npred+2,i)
-              tsim_clr_bc(i)=tsim_clr_bc(i)+predbias(npred+1,i)
-              tsim_clr_bc(i)=tsim_clr_bc(i)+predbias(npred+2,i)
+              if (amsua .and. enable_ml_bc) then ! ML
+                  tsim_bc(i)=tsim_bc(i) + predbias_ml(i) !obs-ges with bias correction
+                  tsim_clr_bc(i)=tsim_clr_bc(i) + predbias_ml(i) !obs-ges with bias correction
+              else
+                  do j=1,npred-angord
+                     tsim_bc(i)=tsim_bc(i)+predbias(j,i)
+                     tsim_clr_bc(i)=tsim_clr_bc(i)+predbias(j,i)
+                  end do
+                  tsim_bc(i)=tsim_bc(i)+predbias(npred+1,i)
+                  tsim_bc(i)=tsim_bc(i)+predbias(npred+2,i)
+                  tsim_clr_bc(i)=tsim_clr_bc(i)+predbias(npred+1,i)
+                  tsim_clr_bc(i)=tsim_clr_bc(i)+predbias(npred+2,i)
+              end if
            end do
 
            if(amsua.or.atms) then
