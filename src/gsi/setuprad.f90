@@ -2787,6 +2787,7 @@ contains
                  call nc_diag_metadata_to_single("BC_Sine_Latitude",predbias(7,ich_diag(i))        )             ! sin(lat) bias correction term
                  call nc_diag_metadata_to_single("BC_Emissivity",predbias(8,ich_diag(i))        )             ! emissivity sensitivity bias correction term
                  call nc_diag_metadata_to_single("BC_Fixed_Scan_Position",predbias(npred+1,ich_diag(i))  )             ! external scan angle
+                 call nc_diag_metadata_to_single("cld_rbc_idx",cld_rbc_idx(ich_diag(i))  )             ! external scan angle
                  if (amsua .and. enable_ml_bc) then
                      call nc_diag_metadata_to_single("BC_ml",predbias_ml(ich_diag(i))  )             ! ml
                  endif
