@@ -397,7 +397,14 @@ subroutine setupspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_diags
 !    reported with pressure.  Type 260=nacelle 261=tower wind spd are
 !    encoded in NCEP prepbufr files with geometric height above
 !    sea level. 
-     
+
+!    Process cygnss observations at mslp
+     if ( nty == 283 ) then
+          z_height = .true.
+          data(ihgt,i) = ten
+          write(6, *) "MJM grepCYG"
+     endif
+
      if (z_height) then
         
         drpx = zero
@@ -982,7 +989,9 @@ subroutine setupspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_diags
            call nc_diag_metadata_to_single("Observation",spdob        )
            call nc_diag_metadata_to_single("Obs_Minus_Forecast_adjusted",ddiff        )
            call nc_diag_metadata_to_single("Obs_Minus_Forecast_unadjusted", spdob0,spdges,'-')
- 
+           call nc_diag_metadata_to_single("Observation0", spdob0)
+           call nc_diag_metadata_to_single("Obs_guess", spdges)
+
            if (lobsdiagsave) then
               do jj=1,miter
                  if (odiag%muse(jj)) then

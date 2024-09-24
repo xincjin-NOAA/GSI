@@ -325,6 +325,10 @@ subroutine setupgnssrspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_
 
 !    Initialize logical     
      z_height = .false.
+!    if ( nty == 260 .or. nty == 261) z_height = .true.
+!    nty == 213 is temporarily assigned to SFMR retrieved wind speed from recon
+!    and is subjet to change in the future
+     if ( nty == 260 .or. nty == 261 .or. nty == 213) z_height = .true.
 
 !    Process observations reported with height differently than those
 !    reported with pressure.  Type 260=nacelle 261=tower wind spd are
@@ -628,13 +632,13 @@ subroutine setupgnssrspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_
      if(binary_diag .and. ii>0)then
         write(7)'gnssrspd',nchar,nreal,ii,mype,ioff0
         write(7)cdiagbuf(1:ii),rdiagbuf(:,1:ii)
-        deallocate(cdiagbuf,rdiagbuf)
 
         if (twodvar_regional) then
            write(7)cprvstg(1:ii),csprvstg(1:ii)
            deallocate(cprvstg,csprvstg)
         endif
      end if
+     deallocate(cdiagbuf,rdiagbuf)
   end if
 
 ! End of routine
@@ -908,7 +912,8 @@ subroutine setupgnssrspd(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_
            call nc_diag_metadata("Observation",                   sngl(gnssrspdob)      )
            call nc_diag_metadata("Obs_Minus_Forecast_adjusted",   sngl(ddiff)      )
            call nc_diag_metadata("Obs_Minus_Forecast_unadjusted", sngl(gnssrspdob0-gnssrspdges) )
- 
+           call nc_diag_metadata("Observation0", sngl(gnssrspdob0) )
+           call nc_diag_metadata("Obs_guess", sngl(gnssrspdges) )
            if (lobsdiagsave) then
               do jj=1,miter
                  if (odiag%muse(jj)) then
