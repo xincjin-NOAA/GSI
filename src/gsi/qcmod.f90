@@ -196,7 +196,7 @@ module qcmod
             ifail_scanedge_qc, ifail_emiss_qc, ifail_cao_qc
   public :: ifail_iland_det, ifail_isnow_det, ifail_iice_det, ifail_iwater_det,&
             ifail_imix_det, ifail_iomg_det, ifail_isst_det, ifail_itopo_det,&
-            ifail_iwndspeed_det
+            ifail_iwndspeed_det, ifail_tb_qc, ifail_ml_qc
   public :: cao_check 
   public :: buddycheck_t,buddydiag_save
   public :: vadwnd_l2rw_qc
@@ -321,6 +321,9 @@ module qcmod
   integer(i_kind),parameter:: ifail_sval_qc=52                         
 !  Reject because factch5 > limit in subroutine qc_amsua over open water      
   integer(i_kind),parameter:: ifail_factch5_qc=53                       
+!  Reject because factch5 > limit in subroutine qc_amsua over open water
+  integer(i_kind),parameter:: ifail_tb_qc=54
+  integer(i_kind),parameter:: ifail_ml_qc=55
 
 ! QC_ATMS
 !  Reject because factch1617 > limit in subroutine qc_amsua over open water

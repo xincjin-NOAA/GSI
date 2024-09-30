@@ -295,6 +295,7 @@ contains
   use qcmod, only: ifail_cao_qc,cao_check  
   use qcmod, only: ifail_iland_det, ifail_isnow_det, ifail_iice_det, ifail_iwater_det, ifail_imix_det, &
                    ifail_iomg_det, ifail_isst_det, ifail_itopo_det,ifail_iwndspeed_det
+  use qcmod, only: ifail_tb_qc, ifail_ml_qc  ! ML
   use qcmod, only: qc_gmi,qc_saphir,qc_amsr2
   use radinfo, only: iland_det, isnow_det, iwater_det, imix_det, iice_det, &
                       iomg_det, itopo_det, isst_det,iwndspeed_det, optconv
@@ -418,8 +419,12 @@ contains
   real(r_kind),dimension(npred_ml):: pred_ml
   real(r_kind),dimension(12,15):: pred_ml_ch
   real, dimension(50) :: ml_h1, ml_h2, ml_h3
-  real, dimension(15) :: ml_y
+  real(r_kind), dimension(15) :: ml_y
   real, dimension(npred_ml) :: scale_obs
+  real(r_kind),parameter:: tbmax = 550._r_kind
+  real(r_kind),parameter:: tbmin = 50._r_kind
+  logical :: tb_err, ml_bc_err
+  real(r_kind),parameter::  r30       = 30.0_r_kind
 
 !for GMI (dual scan angles)
   real(r_kind),dimension(nchanl):: emissivity2,ts2, emissivity_k2,tsim2
@@ -1140,6 +1145,27 @@ contains
             ml_h2 = max(0.0, matmul(ml_weight1, ml_h1) + ml_bias1)
             ml_h3 = matmul(ml_weight2, ml_h2) + ml_bias2
             ml_y = matmul(ml_weight3,  ml_h3) + ml_bias3
+            tb_err = .false.
+            ml_bc_err = .false.
+            do i=1,nchanl
+                if (tb_obs(i) >= tbmax .or. tb_obs(i) <= tbmin) then
+                    tb_err = .true.
+                end if
+                if (abs(ml_y(i)) > r30) then
+                    ml_bc_err = .true.
+                end if
+            end do
+            if (tb_err) then
+                 varinv(1:nchanl)=zero
+                 id_qc(1:nchanl) = ifail_tb_qc
+                 ml_y = 0
+            end if
+            if (ml_bc_err) then
+                varinv(1:nchanl)=zero
+                id_qc(1:nchanl) = ifail_ml_qc
+                ml_y = 0
+            end if
+
             predbias_ml = ml_y
             if (ml_debug .and.  mype == 0) then
                 write(6, *) 'ML data for validation'
