@@ -1281,7 +1281,7 @@ contains
            tbcnob(i)    = tb_obs(i) - tsim(i)  
            tbc(i)       = tbcnob(i)                     
 
-           if (amsua .and. enable_ml_bc) then ! ML
+           if ((i < 6 .or. i > 14) .and. amsua .and. enable_ml_bc) then ! ML
                tbc(i)=tbc(i) - predbias_ml(i) !obs-ges with bias correction
            else
 
@@ -1298,7 +1298,7 @@ contains
               cldeff_fg(i) = tsim(i)-tsim_clr(i)      ! simulated cloud delta
               ! need to apply bias correction ? need to think about this
               bias = zero
-              if (amsua .and. enable_ml_bc) then
+              if ((i < 6 .or. i > 14) .and. amsua .and. enable_ml_bc) then
                   bias = predbias_ml(i)
               else
                   do j=1, npred-angord
@@ -1345,7 +1345,7 @@ contains
               tsim_bc(i)=tsim(i)
               tsim_clr_bc(i)=tsim_clr(i)
 
-              if (amsua .and. enable_ml_bc) then ! ML
+              if ((i < 6 .or. i > 14) .and. amsua .and. enable_ml_bc) then ! ML
                   tsim_bc(i)=tsim_bc(i) + predbias_ml(i) !obs-ges with bias correction
                   tsim_clr_bc(i)=tsim_clr_bc(i) + predbias_ml(i) !obs-ges with bias correction
               else
